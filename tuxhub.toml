@@ -1,0 +1,29 @@
+# Integration with tuxhub. See https://github.com/SirSnolte/tuxhub
+#
+# The settings live in the tool's own background service, so tuxhub, the
+# tool's window and the command line always show the same state. The
+# interface in ui/ is localized and runs both in tuxhub and in the window.
+
+id = "push-to-mute"
+name = "Push-to-Mute"
+version = "0.1.0"
+description = "Mutes Discord, TeamSpeak and other voice chats while you talk in game with push-to-talk."
+icon = "assets/icon.svg"
+
+ui = "ui/index.html"
+
+[run]
+command = "tuxhub-push-to-mute"
+
+[rpc]
+command = "tuxhub-push-to-mute"
+args = ["--tuxhub"]
+autostart = true
+
+[uninstall]
+command = "tuxhub-push-to-mute"
+args = ["uninstall"]
+
+[[actions]]
+id = "toggle"
+label = "Pause or resume muting"

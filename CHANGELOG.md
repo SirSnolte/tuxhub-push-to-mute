@@ -1,0 +1,24 @@
+# Changelog
+
+All notable changes are documented in this file. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
+[Semantic Versioning](https://semver.org/).
+
+## [0.1.0] - 2026-10-22
+
+First release.
+
+### Added
+
+- Mutes selected voice chat applications while a push-to-talk key is held,
+  or switches on each press. The key still reaches the game.
+- Any keyboard key or extra mouse button as trigger, set by pressing it;
+  several keys at once.
+- Live list of the applications recording from a microphone; presets for
+  Discord, Vesktop, WebCord, TeamSpeak and Mumble.
+- Adjustable release delay, pause and resume, start at login.
+- Background service shared by the window, tuxhub and the command line.
+- Installation without tuxhub, with launcher and login entry. tuxhub detects
+  such an installation automatically.
+
+[0.1.0]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.1.0

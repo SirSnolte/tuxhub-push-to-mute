@@ -1,0 +1,23 @@
+[package]
+name = "tuxhub-push-to-mute"
+version = "0.1.0"
+edition = "2024"
+description = "Mutes voice chat applications while an in-game push-to-talk key is held"
+license = "MIT"
+authors = ["SirSnolte"]
+repository = "https://github.com/SirSnolte/tuxhub-push-to-mute"
+
+[dependencies]
+evdev = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+clap = { version = "4", features = ["derive"] }
+ctrlc = { version = "3", features = ["termination"] }
+libc = "0.2"
+tao = "0.37"
+wry = "0.57"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

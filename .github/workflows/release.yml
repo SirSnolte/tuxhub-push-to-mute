@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # An older Ubuntu release keeps the binary compatible with older glibc versions.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Verify that the tag matches the versions
+        run: |
+          version=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          manifest=$(grep -m1 '^version' tuxhub.toml | cut -d'"' -f2)
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "Tag $GITHUB_REF_NAME does not match version $version"; exit 1; }
+          test "$version" = "$manifest" || { echo "tuxhub.toml has version $manifest, expected $version"; exit 1; }
+
+      - name: Test
+        run: cargo test
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Package
+        run: |
+          name=tuxhub-push-to-mute
+          mkdir -p dist/$name
+          cp -r target/release/$name tuxhub.toml ui assets README.md LICENSE CHANGELOG.md dist/$name/
+          tar -C dist -czf $name-x86_64-linux.tar.gz $name
+          sha256sum $name-x86_64-linux.tar.gz > $name-x86_64-linux.tar.gz.sha256
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            tuxhub-push-to-mute-x86_64-linux.tar.gz \
+            tuxhub-push-to-mute-x86_64-linux.tar.gz.sha256 \
+            --title "tuxhub-push-to-mute $GITHUB_REF_NAME" \
+            --notes-file <(awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## \\[" v "\\]" {found=1; next} found && /^## \[/ {exit} found && !/^\[[^]]*\]: /' CHANGELOG.md)

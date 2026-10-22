@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Push-to-Mute</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="/__tuxhub/bridge.js"></script>
+  </head>
+  <body>
+    <main>
+      <section class="card hero" id="hero">
+        <div class="hero-main">
+          <span class="dot" id="dot" aria-hidden="true"></span>
+          <div>
+            <h1 id="state-title"></h1>
+            <p class="muted" id="state-detail"></p>
+          </div>
+        </div>
+        <label class="switch" data-i18n-title="enabled.help">
+          <input type="checkbox" id="enabled" />
+          <span class="track" aria-hidden="true"></span>
+          <span data-i18n="enabled"></span>
+        </label>
+      </section>
+
+      <div class="notice warn hidden" id="problem">
+        <span id="problem-text"></span>
+        <button class="small hidden" id="setup" data-i18n="problem.setup"></button>
+      </div>
+
+      <section class="card">
+        <div class="head">
+          <h2 data-i18n="keys.title"></h2>
+          <button class="primary" id="learn" data-i18n="keys.add"></button>
+        </div>
+        <p class="muted" data-i18n="keys.help"></p>
+        <div class="chips" id="keys"></div>
+        <p class="capture hidden" id="capture" aria-live="assertive">
+          <span data-i18n="keys.capture"></span>
+          <button class="small" id="learn-cancel" data-i18n="keys.cancel"></button>
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="head">
+          <h2 data-i18n="apps.title"></h2>
+        </div>
+        <p class="muted" data-i18n="apps.help"></p>
+        <ul class="streams" id="streams"></ul>
+        <p class="muted empty hidden" id="streams-empty" data-i18n="apps.none"></p>
+
+        <h3 data-i18n="rules.title"></h3>
+        <p class="muted" data-i18n="rules.help"></p>
+        <div class="chips" id="rules"></div>
+        <form class="row" id="rule-form">
+          <input id="rule-input" maxlength="64" autocomplete="off" spellcheck="false" data-i18n-placeholder="rules.placeholder" />
+          <button type="submit" data-i18n="rules.add"></button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2 data-i18n="options.title"></h2>
+        <div class="field">
+          <span>
+            <span data-i18n="mode.label"></span>
+            <small class="muted" id="mode-help"></small>
+          </span>
+          <select id="mode">
+            <option value="hold" data-i18n="mode.hold"></option>
+            <option value="toggle" data-i18n="mode.toggle"></option>
+          </select>
+        </div>
+        <div class="field">
+          <span>
+            <span data-i18n="delay.label"></span>
+            <small class="muted" data-i18n="delay.help"></small>
+          </span>
+          <span class="row nowrap">
+            <input type="number" id="delay" min="0" max="2000" step="10" />
+            <span class="muted">ms</span>
+          </span>
+        </div>
+        <div class="field">
+          <span>
+            <span data-i18n="login.label"></span>
+            <small class="muted" data-i18n="login.help"></small>
+          </span>
+          <label class="switch">
+            <input type="checkbox" id="login" />
+            <span class="track" aria-hidden="true"></span>
+          </label>
+        </div>
+      </section>
+
+      <p class="error" id="error" role="alert"></p>
+      <p class="muted footer" id="footer"></p>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
