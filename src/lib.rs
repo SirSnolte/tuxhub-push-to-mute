@@ -2,6 +2,7 @@
 
 pub mod audio;
 pub mod client;
+pub mod conditions;
 pub mod config;
 pub mod daemon;
 pub mod input;
