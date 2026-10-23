@@ -395,10 +395,6 @@ function renderMet() {
   for (const b of document.querySelectorAll("[data-met]")) b.classList.toggle("hidden", !met.includes(b.dataset.met));
 }
 
-function windowMatches(w, app) {
-  return [w.term, w.class].some((f) => (f ?? "").toLowerCase().includes(app));
-}
-
 let focusShown = false;
 
 function renderWindowHints() {
@@ -427,7 +423,7 @@ function renderWindows() {
     );
     box.checked = w.matched;
     box.addEventListener("change", () => {
-      if (!box.checked) return setConditions(conditions.filter((c) => !windowMatches(w, c.app)));
+      if (!box.checked) return setConditions(conditions.filter((c) => !(w.matches ?? []).includes(c.app)));
       if (conditions.some((c) => c.app === w.term)) {
         setConditions(conditions.map((c) => (c.app === w.term ? { ...c, when: "focused" } : c)));
       } else {

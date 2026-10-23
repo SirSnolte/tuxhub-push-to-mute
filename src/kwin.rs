@@ -88,9 +88,10 @@ async fn run(on_windows: OnWindows) -> zbus::Result<()> {
     let mut changes = dbus
         .receive_name_owner_changed_with_args(&[(0, KWIN)])
         .await?;
-    let owner: Owner = Arc::new(Mutex::new(
-        dbus.get_name_owner(kwin).await.ok().map(|o| o.to_string()),
-    ));
+    // Without the owner every report would be rejected.
+    let owner: Owner = Arc::new(Mutex::new(Some(
+        dbus.get_name_owner(kwin).await?.to_string(),
+    )));
     let windows = Windows {
         owner: owner.clone(),
         on_windows: on_windows.clone(),

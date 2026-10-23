@@ -936,8 +936,8 @@ mod tests {
         assert_eq!(
             s.window_list(),
             json!([
-                { "term": "fakegame", "class": "fakegame", "active": true, "matched": true },
-                { "term": "firefox", "class": "firefox", "active": false, "matched": false },
+                { "term": "fakegame", "class": "fakegame", "active": true, "matched": true, "matches": ["fakegame"] },
+                { "term": "firefox", "class": "firefox", "active": false, "matched": false, "matches": [] },
             ])
         );
         assert_eq!(s.met, ["fakegame"]);

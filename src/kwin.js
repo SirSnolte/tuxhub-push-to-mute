@@ -33,6 +33,7 @@ function send(removed) {
 function watch(w) {
   w.windowClassChanged.connect(() => send());
   w.desktopFileNameChanged.connect(() => send());
+  w.skipTaskbarChanged.connect(() => send());
 }
 
 workspace.windowList().forEach(watch);

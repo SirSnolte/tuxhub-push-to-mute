@@ -234,6 +234,8 @@ pub struct WindowEntry {
     pub class: String,
     pub active: bool,
     pub matched: bool,
+    /// Terms of the entries that match this window.
+    pub matches: Vec<String>,
 }
 
 /// The open windows for the interface: one entry per term, without the
@@ -249,17 +251,27 @@ pub fn window_list(windows: Option<&Snapshot>, conditions: &[Condition]) -> Vec<
             continue;
         }
         let active = snapshot.active == w.id;
-        let matched = conditions.iter().any(|c| w.matches(&c.app));
+        let matches: Vec<String> = conditions
+            .iter()
+            .filter(|c| w.matches(&c.app))
+            .map(|c| c.app.clone())
+            .collect();
         match out.iter_mut().find(|e| e.term == term) {
             Some(e) => {
                 e.active |= active;
-                e.matched |= matched;
+                for m in matches {
+                    if !e.matches.contains(&m) {
+                        e.matches.push(m);
+                    }
+                }
+                e.matched = !e.matches.is_empty();
             }
             None => out.push(WindowEntry {
                 term,
                 class: w.class.clone(),
                 active,
-                matched,
+                matched: !matches.is_empty(),
+                matches,
             }),
         }
     }
@@ -552,7 +564,11 @@ mod tests {
                     desktop: "io.github.sirsnolte.TuxhubPushToMute".into(),
                     ..window("{e}", "", 64, None)
                 },
-                window("{f}", "Gimp", 0, None),
+                // Matched only through its desktop file.
+                Window {
+                    desktop: "org.gimp.GIMP".into(),
+                    ..window("{f}", "Gimp", 0, None)
+                },
                 // The window as GTK names it after the program on Wayland.
                 window(
                     "{g}",
@@ -562,19 +578,23 @@ mod tests {
                 ),
             ],
         };
-        let list = window_list(Some(&snapshot), &[cond("kate", When::Focused)]);
-        let entry = |term: &str, class: &str, active: bool, matched: bool| WindowEntry {
+        let list = window_list(
+            Some(&snapshot),
+            &[cond("kate", When::Focused), cond("org.gimp", When::Running)],
+        );
+        let entry = |term: &str, class: &str, active: bool, matches: &[&str]| WindowEntry {
             term: term.into(),
             class: class.into(),
             active,
-            matched,
+            matched: !matches.is_empty(),
+            matches: matches.iter().map(|m| m.to_string()).collect(),
         };
         assert_eq!(
             list,
             [
-                entry("cyberpunk2077.exe", "steam_app_1091500", false, false),
-                entry("kate", "org.kde.kate", true, true),
-                entry("gimp", "Gimp", false, false),
+                entry("cyberpunk2077.exe", "steam_app_1091500", false, &[]),
+                entry("kate", "org.kde.kate", true, &["kate"]),
+                entry("gimp", "Gimp", false, &["org.gimp"]),
             ]
         );
         assert!(window_list(None, &[]).is_empty());
