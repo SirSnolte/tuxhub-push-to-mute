@@ -1,2 +1,29 @@
-/target
-/dist
+# Build output
+/target/
+/dist/
+*.tar.gz
+
+# Local copy for linking the tool in tuxhub developer mode
+/tuxhub-push-to-mute
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Logs and local test output
+*.log
+/screenshots/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Never commit signing keys or certificates (public keys stay allowed)
+*.key
+*.pem
+*.p12
+*.pfx

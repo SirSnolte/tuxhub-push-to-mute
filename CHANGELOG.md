@@ -4,7 +4,7 @@ All notable changes are documented in this file. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-23
 
 ### Changed
 
@@ -31,4 +31,5 @@ First release.
 - Installation without tuxhub, with launcher and login entry. tuxhub detects
   such an installation automatically.
 
+[0.2.0]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.1.0
