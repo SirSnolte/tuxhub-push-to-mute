@@ -104,7 +104,7 @@ pub fn run() -> io::Result<bool> {
     let _ = std::fs::remove_file(&socket);
     drop(lock);
     if restart {
-        exec_self();
+        exec_self(service.exe.as_ref().map(|(p, _)| p));
     }
     Ok(true)
 }
@@ -121,9 +121,11 @@ fn try_lock(path: &PathBuf) -> io::Result<Option<std::fs::File>> {
 }
 
 /// Replaces the process with the current executable, after an update.
-fn exec_self() {
+/// `path` is the executable as it was at start. `current_exe()` cannot be
+/// used here: after an update it names the deleted old file.
+fn exec_self(path: Option<&PathBuf>) {
     use std::os::unix::process::CommandExt;
-    if let Ok(exe) = std::env::current_exe() {
+    if let Some(exe) = path {
         let err = std::process::Command::new(exe).arg("daemon").exec();
         eprintln!("could not restart after an update: {err}");
     }
