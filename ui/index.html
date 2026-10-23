@@ -51,6 +51,36 @@
 
       <wa-card>
         <div class="wa-stack wa-gap-s">
+          <h2 data-i18n="only.title"></h2>
+          <p class="muted" data-i18n="only.help"></p>
+          <div class="list" id="conditions"></div>
+          <p class="empty muted hidden" id="conditions-empty" data-i18n="only.none"></p>
+          <form class="wa-cluster wa-gap-xs" id="condition-form">
+            <wa-input
+              id="condition-input"
+              maxlength="64"
+              autocomplete="off"
+              spellcheck="false"
+              data-i18n-placeholder="only.placeholder"
+              data-i18n-aria-label="only.placeholder"
+            ></wa-input>
+            <wa-button type="submit" appearance="outlined" data-i18n="only.add"></wa-button>
+          </form>
+
+          <wa-divider></wa-divider>
+
+          <h3 data-i18n="windows.title"></h3>
+          <p class="muted" id="windows-help" data-i18n="windows.help"></p>
+          <div class="list" id="windows"></div>
+          <p class="empty muted hidden" id="windows-empty" data-i18n="windows.none"></p>
+          <wa-callout variant="neutral" class="hidden" id="windows-unavailable">
+            <span data-i18n="windows.unavailable"></span>
+          </wa-callout>
+        </div>
+      </wa-card>
+
+      <wa-card>
+        <div class="wa-stack wa-gap-s">
           <h2 data-i18n="apps.title"></h2>
           <p class="muted" data-i18n="apps.help"></p>
           <div class="streams" id="streams"></div>

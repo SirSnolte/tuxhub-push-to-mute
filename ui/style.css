@@ -86,26 +86,47 @@ wa-tag .remove::part(base) {
 #keys .placeholder {
   color: var(--wa-color-text-quiet);
 }
-#rule-input {
+#rule-input,
+#condition-input {
   flex: 1;
   min-width: 160px;
   max-width: 320px;
 }
 
-/* Recording applications */
-.streams {
+/* Recording applications, conditions and open windows */
+.streams,
+.list {
   border: var(--wa-border-width-s) solid var(--wa-color-surface-border);
   border-radius: var(--wa-border-radius-m);
 }
-.streams:empty {
+.streams:empty,
+.list:empty {
   display: none;
 }
-.streams wa-switch.setting {
+.streams wa-switch.setting,
+.list wa-switch.setting {
   padding-inline: var(--wa-space-m);
   padding-block: var(--wa-space-s);
 }
-.streams .name {
+.streams .name,
+.list .name {
   font-weight: var(--wa-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+/* A condition: term and state on the left, choice and remove button on the right. */
+.condition {
+  display: flex;
+  align-items: center;
+  gap: var(--wa-space-xs);
+  padding-inline: var(--wa-space-m) var(--wa-space-2xs);
+}
+.condition + .condition {
+  border-top: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+}
+.condition wa-select.setting {
+  flex: 1;
+  min-width: 0;
+  padding-block: var(--wa-space-s);
 }
 .badge {
   font-size: var(--wa-font-size-2xs);
@@ -114,6 +135,9 @@ wa-tag .remove::part(base) {
   letter-spacing: 0.04em;
   color: var(--wa-color-danger-on-quiet);
   margin-inline-start: var(--wa-space-xs);
+}
+.badge.success {
+  color: var(--wa-color-success-on-quiet);
 }
 .empty {
   padding: var(--wa-space-m);
