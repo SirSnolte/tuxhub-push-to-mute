@@ -47,6 +47,13 @@ impl Listener {
         Self { control: tx }
     }
 
+    /// A listener without devices, for tests.
+    #[cfg(test)]
+    pub fn detached() -> Self {
+        let (tx, _) = std::sync::mpsc::channel();
+        Self { control: tx }
+    }
+
     pub fn set_keys(&self, keys: Vec<KeyCode>) {
         let _ = self.control.send(Control::Keys(keys));
     }
