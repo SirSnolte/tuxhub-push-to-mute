@@ -33,6 +33,10 @@ tuxhub, whichever is installed first.
   TeamSpeak and Mumble; others can be added.
 - Hold mode (muted while held) or toggle mode (each press switches).
 - Release delay, so the end of a sentence does not reach the voice chat.
+- Optionally only active in certain applications, for example only while a
+  game is running or in the foreground, so the key does not mute the voice
+  chat in the browser. The foreground window is detected on KDE Plasma 6;
+  elsewhere such entries count while the application is running.
 - Runs in the background from login, without a window and without tuxhub.
 - Works on Wayland and X11 with PipeWire.
 
@@ -91,11 +95,19 @@ tuxhub-push-to-mute keys BTN_EXTRA  # set the keys by name
 tuxhub-push-to-mute streams         # applications recording right now
 tuxhub-push-to-mute apps discord teamspeak
 tuxhub-push-to-mute mode toggle
+tuxhub-push-to-mute only cs2 focused:eldenring.exe  # only in these applications
+tuxhub-push-to-mute only            # active everywhere again
+tuxhub-push-to-mute windows         # open windows (KDE Plasma)
 tuxhub-push-to-mute disable         # pause; enable resumes
 ```
 
 Key names follow the Linux input subsystem: `BTN_SIDE` and `BTN_EXTRA` are
 the side buttons of most mice, `KEY_V` is the V key.
+
+`only` takes terms that are matched against process names (and, for the
+foreground, against the window class): `cs2` or `running:cs2` applies while
+such a process runs, `focused:cs2` while its window is in the foreground.
+For Proton games, use the name of the `.exe`.
 
 ## How it works
 
@@ -111,6 +123,12 @@ stored in `~/.config/tuxhub-push-to-mute/config.json`.
 
 Only the selected keys are evaluated. Every other key is discarded
 immediately and nothing is stored or sent anywhere.
+
+When muting is limited to certain applications, the service compares the
+names of your own processes from `/proc` every two seconds. On KDE Plasma it
+also loads a small KWin script that reports the class and process of each
+open window over the session bus, never window titles. The script is removed
+when the service ends.
 
 ## Building
 

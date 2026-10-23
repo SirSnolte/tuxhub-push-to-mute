@@ -1,6 +1,6 @@
 [package]
 name = "tuxhub-push-to-mute"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Mutes voice chat applications while an in-game push-to-talk key is held"
 license = "MIT"

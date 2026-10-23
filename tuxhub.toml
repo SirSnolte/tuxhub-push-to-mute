@@ -6,7 +6,7 @@
 
 id = "push-to-mute"
 name = "Push-to-Mute"
-version = "0.2.0"
+version = "0.3.0"
 description = "Mutes Discord, TeamSpeak and other voice chats while you talk in game with push-to-talk."
 icon = "assets/icon.svg"
 
