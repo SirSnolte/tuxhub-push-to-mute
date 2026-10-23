@@ -4,6 +4,16 @@ All notable changes are documented in this file. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Interface rebuilt with Web Awesome and the tuxhub theme, so the window and
+  the page inside tuxhub match tuxhub.
+- Keys and applications can be removed with the keyboard; each remove button
+  is named after its entry.
+- Each recording application is a row with a switch; the whole row toggles it.
+
 ## [0.1.0] - 2026-10-22
 
 First release.

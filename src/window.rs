@@ -203,7 +203,8 @@ fn serve(ui: &Path, req: &Request<Vec<u8>>) -> Response<Cow<'static, [u8]>> {
             .header(header::CONTENT_TYPE, mime)
             .header(
                 header::CONTENT_SECURITY_POLICY,
-                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:",
+                // Web Awesome loads its built-in icons from data: URLs with fetch().
+                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' data:",
             )
             .body(Cow::Owned(b))
             .unwrap(),

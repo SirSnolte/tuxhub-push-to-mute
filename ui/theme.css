@@ -1,0 +1,212 @@
+/*
+ * tuxhub theme for Web Awesome 3.
+ *
+ * One look for tuxhub and every tool. This file is the reference: tools copy
+ * it unchanged into their interface folder (see README.md in this folder).
+ * Dark mode: class "wa-dark" on <html>; light mode: "wa-light".
+ */
+
+:root {
+  /* Brand: tuxhub green (#2f7d4f light, #4fbf7d dark). */
+  --wa-color-brand-95: oklch(96% 0.03 152);
+  --wa-color-brand-90: oklch(91% 0.06 152);
+  --wa-color-brand-80: oklch(82% 0.1 152);
+  --wa-color-brand-70: oklch(72% 0.14 152);
+  --wa-color-brand-60: oklch(63% 0.14 152);
+  --wa-color-brand-50: oklch(53% 0.11 152);
+  --wa-color-brand-40: oklch(45% 0.1 152);
+  --wa-color-brand-30: oklch(38% 0.085 152);
+  --wa-color-brand-20: oklch(30% 0.065 152);
+  --wa-color-brand-10: oklch(22% 0.045 152);
+  --wa-color-brand-05: oklch(17% 0.035 152);
+  --wa-color-brand: var(--wa-color-brand-50);
+  --wa-color-brand-on: white;
+
+  /* Desktop density: 15 px text, slightly tighter spacing, softer corners. */
+  --wa-font-size-scale: 0.9375;
+  --wa-space-scale: 0.875;
+  --wa-border-radius-scale: 1.25;
+  --wa-font-family-body: system-ui, "Noto Sans", sans-serif;
+  --wa-font-family-heading: var(--wa-font-family-body);
+}
+
+:root,
+.wa-light {
+  --wa-color-surface-raised: #ffffff;
+  --wa-color-surface-default: #ffffff;
+  --wa-color-surface-lowered: #f4f5f7;
+  --wa-color-surface-border: #e1e4ea;
+}
+
+.wa-dark {
+  --wa-color-surface-raised: #1f232a;
+  --wa-color-surface-default: #1b1e24;
+  --wa-color-surface-lowered: #121418;
+  --wa-color-surface-border: #2c313a;
+  --wa-color-brand-fill-loud: var(--wa-color-brand-70);
+  --wa-color-brand-on-loud: var(--wa-color-brand-05);
+}
+
+/* ------------------------------------------------------------------ Base */
+
+body {
+  margin: 0;
+  color: var(--wa-color-text-normal);
+  font-family: var(--wa-font-family-body);
+  font-size: var(--wa-font-size-m);
+  line-height: var(--wa-line-height-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+h1,
+h2,
+h3 {
+  font-weight: var(--wa-font-weight-heading);
+  line-height: var(--wa-line-height-condensed);
+  letter-spacing: -0.01em;
+}
+h1 {
+  font-size: var(--wa-font-size-xl);
+}
+h2 {
+  font-size: var(--wa-font-size-l);
+}
+h3 {
+  font-size: var(--wa-font-size-m);
+}
+
+a {
+  color: var(--wa-color-text-link);
+}
+
+kbd {
+  font: var(--wa-font-size-xs) / 1.4 var(--wa-font-family-code);
+  padding: 0.05em 0.45em;
+  border: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+  border-bottom-width: calc(var(--wa-border-width-s) * 2);
+  border-radius: var(--wa-border-radius-s);
+  background: var(--wa-color-surface-lowered);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: var(--wa-focus-ring);
+  outline-offset: var(--wa-focus-ring-offset);
+}
+
+/*
+ * Settings row: label and hint on the left, control on the right, as in the
+ * GNOME and KDE settings. Works on wa-switch, wa-select and wa-input with the
+ * class "setting"; the label stays part of the control for screen readers.
+ */
+wa-switch.setting,
+wa-select.setting,
+wa-input.setting {
+  display: block;
+  padding-block: var(--wa-space-m);
+}
+wa-switch.setting + .setting,
+wa-select.setting + .setting,
+wa-input.setting + .setting {
+  border-top: var(--wa-border-width-s) solid var(--wa-color-surface-border);
+}
+wa-switch.setting::part(base) {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  gap: var(--wa-space-l);
+}
+wa-switch.setting::part(label) {
+  flex: 1;
+  margin-inline-start: 0;
+}
+wa-switch.setting::part(hint) {
+  margin-inline-start: 0;
+  padding-inline-end: calc(var(--wa-space-l) + 2.5em);
+}
+/* Label and hint are centered next to the control, with or without a hint. */
+wa-select.setting::part(form-control),
+wa-input.setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 1fr auto auto 1fr;
+  column-gap: var(--wa-space-l);
+  align-items: center;
+}
+wa-select.setting::part(form-control-label),
+wa-input.setting::part(form-control-label) {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  font-weight: var(--wa-font-weight-body);
+}
+wa-select.setting::part(hint),
+wa-input.setting::part(hint) {
+  grid-column: 1;
+  grid-row: 3;
+}
+wa-select.setting::part(form-control-input),
+wa-input.setting::part(base) {
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+wa-select.setting::part(form-control-input) {
+  min-width: 13em;
+}
+wa-input.setting[type="number"]::part(base) {
+  width: 8.5em;
+}
+/* Narrow windows: the control goes below its label and hint. */
+@media (max-width: 560px) {
+  wa-select.setting::part(form-control),
+  wa-input.setting {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    row-gap: var(--wa-space-xs);
+  }
+  wa-select.setting::part(form-control-label),
+  wa-input.setting::part(form-control-label) {
+    grid-row: 1;
+  }
+  wa-select.setting::part(hint),
+  wa-input.setting::part(hint) {
+    grid-row: 2;
+  }
+  wa-select.setting::part(form-control-input),
+  wa-input.setting::part(base) {
+    grid-column: 1;
+    grid-row: 3;
+    min-width: 0;
+  }
+}
+
+.muted {
+  color: var(--wa-color-text-quiet);
+}
+.small {
+  font-size: var(--wa-font-size-s);
+}
+.hidden {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --wa-transition-fast: 0s;
+    --wa-transition-normal: 0s;
+    --wa-transition-slow: 0s;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -200,6 +200,22 @@ function applyTexts() {
   for (const n of document.querySelectorAll("[data-i18n]")) n.textContent = t(n.dataset.i18n);
   for (const n of document.querySelectorAll("[data-i18n-title]")) n.title = t(n.dataset.i18nTitle);
   for (const n of document.querySelectorAll("[data-i18n-placeholder]")) n.placeholder = t(n.dataset.i18nPlaceholder);
+  for (const n of document.querySelectorAll("[data-i18n-aria-label]")) n.setAttribute("aria-label", t(n.dataset.i18nAriaLabel));
+}
+
+// A tag with a remove button. The built-in remove button of wa-tag cannot be
+// reached with the keyboard and is not named after the tag, so it is not used.
+function chip(text, removeLabel, onRemove, props = {}) {
+  return el(
+    "wa-tag",
+    props,
+    text,
+    el(
+      "wa-button",
+      { class: "remove", appearance: "plain", size: "s", title: removeLabel, onclick: onRemove },
+      el("wa-icon", { name: "xmark", library: "system", variant: "solid", label: removeLabel }),
+    ),
+  );
 }
 
 function renderStatus() {
@@ -233,7 +249,8 @@ function renderStatus() {
   $("capture").classList.toggle("hidden", !learning);
   $("learn").disabled = learning || state === "offline";
 
-  for (const chip of document.querySelectorAll(".chip.key")) chip.classList.toggle("held", !!status.held && status.enabled);
+  const held = !!status.held && status.enabled;
+  for (const tag of document.querySelectorAll("wa-tag.key")) tag.variant = held ? "danger" : "brand";
   $("footer").textContent = status.version ? t("footer", { version: status.version }) : "";
 }
 
@@ -245,17 +262,11 @@ function renderKeys() {
   for (const k of keys) {
     const label = keyLabel(k);
     box.append(
-      el(
-        "span",
-        { class: "chip key", title: k },
-        label,
-        el("button", {
-          type: "button",
-          "aria-label": t("keys.remove", { key: label }),
-          title: t("keys.remove", { key: label }),
-          onclick: () => update({ keys: keys.filter((x) => x !== k) }),
-        }, "×"),
-      ),
+      chip(label, t("keys.remove", { key: label }), () => update({ keys: keys.filter((x) => x !== k) }), {
+        class: "key",
+        variant: "brand",
+        title: k,
+      }),
     );
   }
 }
@@ -271,27 +282,19 @@ function renderStreams() {
   const terms = config?.apps ?? [];
   for (const s of streams) {
     const detail = [s.binary, s.app_id].filter((x) => x && x !== s.name).join(" · ");
-    const box = el("input", { type: "checkbox" });
+    const box = el(
+      "wa-switch",
+      { class: "setting", title: t("apps.mute") },
+      el("span", { class: "name" }, s.name || s.binary || `#${s.id}`),
+      s.muted ? el("span", { class: "badge" }, t("apps.mutedNow")) : null,
+      detail ? el("span", { slot: "hint" }, detail) : null,
+    );
     box.checked = matches(s, terms);
     box.addEventListener("change", () => {
       if (box.checked) update({ apps: [...terms, s.term] });
       else update({ apps: terms.filter((term) => !matches(s, [term])) });
     });
-    list.append(
-      el(
-        "li",
-        {},
-        el(
-          "span",
-          {},
-          el("span", { class: "name" }, s.name || s.binary || `#${s.id}`),
-          s.muted ? el("span", { class: "badge" }, t("apps.mutedNow")) : null,
-          detail ? el("span", { class: "detail" }, detail) : null,
-        ),
-        el("label", { class: "switch", title: t("apps.mute") }, box, el("span", { class: "track", "aria-hidden": "true" })),
-      ),
-    );
-    box.setAttribute("aria-label", `${t("apps.mute")}: ${s.name || s.binary}`);
+    list.append(box);
   }
   $("streams-empty").classList.toggle("hidden", streams.length > 0);
 }
@@ -301,19 +304,7 @@ function renderRules() {
   box.replaceChildren();
   const terms = config?.apps ?? [];
   for (const term of terms) {
-    box.append(
-      el(
-        "span",
-        { class: "chip" },
-        term,
-        el("button", {
-          type: "button",
-          "aria-label": t("rules.remove", { name: term }),
-          title: t("rules.remove", { name: term }),
-          onclick: () => update({ apps: terms.filter((x) => x !== term) }),
-        }, "×"),
-      ),
-    );
+    box.append(chip(term, t("rules.remove", { name: term }), () => update({ apps: terms.filter((x) => x !== term) })));
   }
 }
 
@@ -400,9 +391,12 @@ tuxhub.on("setup", ({ error }) => {
   setupError = error;
   renderStatus();
 });
-tuxhub.on("theme", ({ dark }) => {
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
-});
+function applyTheme(dark) {
+  document.documentElement.classList.toggle("wa-dark", dark);
+  document.documentElement.classList.toggle("wa-light", !dark);
+}
+
+tuxhub.on("theme", ({ dark }) => applyTheme(dark));
 tuxhub.on("locale", ({ locale: l }) => {
   locale = l === "de" ? "de" : "en";
   render();
@@ -426,6 +420,6 @@ async function load() {
 }
 
 if (tuxhub.standalone) document.documentElement.dataset.standalone = "";
-document.documentElement.dataset.theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+applyTheme(matchMedia("(prefers-color-scheme: dark)").matches);
 render();
 load();
