@@ -952,4 +952,24 @@ mod tests {
         s.scan();
         assert_eq!(s.met, ["fakegame"]);
     }
+
+    #[test]
+    fn switching_to_focused_applies_at_once() {
+        let proc = FakeProc::new("svc-switch");
+        start_game(&proc);
+        let mut s = service(&proc, &[("fakegame", When::Running)], Mode::Hold);
+        // The browser is in front, the game runs in the background.
+        focus(&mut s, false);
+        assert_eq!(s.met, ["fakegame"]);
+        let mut cfg = s.cfg.clone();
+        cfg.only_when = conditions(&[("fakegame", When::Focused)]);
+        s.apply_config(cfg);
+        assert!(s.met.is_empty());
+        s.input(input::Event::Pressed);
+        assert!(!s.muted);
+        s.input(input::Event::Released);
+        focus(&mut s, true);
+        s.input(input::Event::Pressed);
+        assert!(s.muted);
+    }
 }
