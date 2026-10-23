@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
 use std::time::Duration;
-use tuxhub_push_to_mute::config::{Mode, parse_key};
+use tuxhub_push_to_mute::config::{Mode, parse_conditions, parse_key};
 use tuxhub_push_to_mute::{client, daemon, integration, proxy, window};
 
 /// Mutes voice chat applications such as Discord, TeamSpeak or Mumble while
@@ -38,6 +38,12 @@ enum Command {
         #[arg(required = true)]
         apps: Vec<String>,
     },
+    /// Mute only while one of these applications runs or is in the
+    /// foreground: `cs2` or `running:cs2` while it runs, `focused:cs2` while
+    /// it is in the foreground. Without arguments, muting works everywhere
+    Only { apps: Vec<String> },
+    /// List the open windows, as candidates for `only focused:...`
+    Windows,
     /// Mute while the key is held, or switch with each press
     Mode {
         #[arg(value_enum)]
@@ -124,6 +130,35 @@ fn run(cmd: Command) -> io::Result<()> {
             set(json!({ "keys": keys }))
         }
         Command::Apps { apps } => set(json!({ "apps": apps })),
+        Command::Only { apps } => {
+            let conditions = parse_conditions(&apps).map_err(io::Error::other)?;
+            set(json!({ "only_when": conditions }))
+        }
+        Command::Windows => {
+            let status = client::request("status", Value::Null)?;
+            let list = client::request("windows", Value::Null)?;
+            let list = list.as_array().cloned().unwrap_or_default();
+            if status["focus_available"] != json!(true) {
+                println!("Open windows are only detected on KDE Plasma.");
+            } else if list.is_empty() {
+                println!("No window is open.");
+            }
+            for w in list {
+                let text = |k: &str| w[k].as_str().unwrap_or_default().to_string();
+                let marks: Vec<&str> = [("active", "in foreground"), ("matched", "selected")]
+                    .into_iter()
+                    .filter(|(k, _)| w[*k] == json!(true))
+                    .map(|(_, mark)| mark)
+                    .collect();
+                println!(
+                    "{:<28} {:<36} {}",
+                    text("term"),
+                    text("class"),
+                    marks.join(", ")
+                );
+            }
+            Ok(())
+        }
         Command::Mode { mode } => set(json!({ "mode": mode })),
         Command::Enable => set(json!({ "enabled": true })),
         Command::Disable => set(json!({ "enabled": false })),
@@ -172,6 +207,33 @@ fn print_status(s: &Value) -> io::Result<()> {
     );
     println!("Mode:      {}", cfg["mode"].as_str().unwrap_or_default());
     println!("Apps:      {}", list(&cfg["apps"]));
+    let met = &s["met"].as_array().cloned().unwrap_or_default();
+    let only: Vec<String> = cfg["only_when"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|c| {
+            let mark = if met.contains(&c["app"]) { ", met" } else { "" };
+            format!(
+                "{} ({}{mark})",
+                c["app"].as_str().unwrap_or_default(),
+                c["when"].as_str().unwrap_or_default()
+            )
+        })
+        .collect();
+    if only.is_empty() {
+        println!("Only when: always");
+    } else {
+        println!("Only when: {}", only.join(", "));
+        println!(
+            "Windows:   {}",
+            if s["focus_available"] == json!(true) {
+                "detected through KWin"
+            } else {
+                "not detected; focused entries count while the application runs"
+            }
+        );
+    }
     println!("Devices:   {}", s["devices"]);
     Ok(())
 }
