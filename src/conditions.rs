@@ -6,7 +6,7 @@
 //! titles are never part of them.
 
 use crate::config::{Condition, When};
-use crate::integration::APP_ID;
+use crate::integration::{APP_ID, EXE_NAME};
 use serde::Serialize;
 use serde_json::Value;
 use std::io::Read;
@@ -148,8 +148,13 @@ impl Window {
             .to_lowercase()
     }
 
+    /// The window of this tool. On Wayland, GTK names it after the program
+    /// rather than the app id.
     fn is_own(&self) -> bool {
-        self.class.eq_ignore_ascii_case(APP_ID) || self.desktop.eq_ignore_ascii_case(APP_ID)
+        let exe = self.process.as_ref().map(|p| p.exe.as_str()).unwrap_or("");
+        [self.class.as_str(), &self.desktop, exe]
+            .iter()
+            .any(|f| f.eq_ignore_ascii_case(APP_ID) || f.eq_ignore_ascii_case(EXE_NAME))
     }
 }
 
@@ -541,13 +546,20 @@ mod tests {
                     "{d}",
                     "io.github.sirsnolte.TuxhubPushToMute",
                     63,
-                    Some(names("tuxhub-push-to", "tuxhub-push-to-mute")),
+                    Some(names("tuxhub-push-to-", "tuxhub-push-to-mute")),
                 ),
                 Window {
                     desktop: "io.github.sirsnolte.TuxhubPushToMute".into(),
                     ..window("{e}", "", 64, None)
                 },
                 window("{f}", "Gimp", 0, None),
+                // The window as GTK names it after the program on Wayland.
+                window(
+                    "{g}",
+                    "tuxhub-push-to-mute",
+                    65,
+                    Some(names("tuxhub-push-to-", "tuxhub-push-to-mute")),
+                ),
             ],
         };
         let list = window_list(Some(&snapshot), &[cond("kate", When::Focused)]);

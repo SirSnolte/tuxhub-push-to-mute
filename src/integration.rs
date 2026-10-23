@@ -14,7 +14,7 @@ use std::process::{Command, Stdio};
 
 pub const APP_ID: &str = "io.github.sirsnolte.TuxhubPushToMute";
 pub const TOOL_ID: &str = "push-to-mute";
-const EXE_NAME: &str = "tuxhub-push-to-mute";
+pub const EXE_NAME: &str = "tuxhub-push-to-mute";
 const REPO: &str = "SirSnolte/tuxhub-push-to-mute";
 const RELEASE_ASSET: &str = "*x86_64-linux.tar.gz";
 /// Data folder of tuxhub, to detect an installation made through it.
