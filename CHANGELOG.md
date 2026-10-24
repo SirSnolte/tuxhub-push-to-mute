@@ -4,6 +4,14 @@ All notable changes are documented in this file. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.1] - 2026-10-24
+
+### Fixed
+
+- The taskbar matches the window to its launcher and icon: the window reports
+  its app id to the compositor.
+- The page inside tuxhub no longer shows a stray pixel at the top left.
+
 ## [0.3.0] - 2026-10-23
 
 ### Added
@@ -43,6 +51,7 @@ First release.
 - Installation without tuxhub, with launcher and login entry. tuxhub detects
   such an installation automatically.
 
+[0.3.1]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.3.1
 [0.3.0]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SirSnolte/tuxhub-push-to-mute/releases/tag/v0.1.0
