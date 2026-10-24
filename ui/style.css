@@ -1,7 +1,15 @@
 /* Layout of Push-to-Mute. Colors, controls and base styles come from Web
    Awesome and theme.css; only what is specific to this interface is here. */
 
+/* The body scrolls instead of the document: WebKitGTK draws a stray pixel
+   at the top left of an embedded page whose document scrolls. */
+html {
+  height: 100%;
+  overflow: hidden;
+}
 body {
+  height: 100%;
+  overflow-y: auto;
   background: transparent;
 }
 
