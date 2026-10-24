@@ -5,6 +5,7 @@ use crate::client;
 use crate::integration::{APP_ID, tool_root};
 use serde_json::{Value, json};
 use std::borrow::Cow;
+use std::ffi::{CString, c_char};
 use std::io::{self, BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::path::{Component, Path, PathBuf};
@@ -34,6 +35,7 @@ pub fn run() -> io::Result<()> {
     let socket: Socket = Arc::new(Mutex::new(None));
     connect(&socket)?;
 
+    set_program_name(APP_ID);
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event()
         .with_app_id(APP_ID)
         .build();
@@ -88,6 +90,19 @@ pub fn run() -> io::Result<()> {
             _ => {}
         }
     })
+}
+
+/// Sets the GLib program name. GTK 3 sends it to the compositor as the Wayland
+/// app id, not the id of the event loop's application, and the launcher and
+/// icon are found by that id. GTK keeps a name that is set before it starts.
+fn set_program_name(name: &str) {
+    unsafe extern "C" {
+        // From GLib, which GTK links.
+        fn g_set_prgname(prgname: *const c_char);
+    }
+    let name = CString::new(name).expect("the app id has no NUL byte");
+    // GLib copies the string.
+    unsafe { g_set_prgname(name.as_ptr()) };
 }
 
 fn ui_dir() -> Option<PathBuf> {
