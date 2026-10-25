@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
@@ -34,10 +35,14 @@ pub fn connect_or_start() -> io::Result<UnixStream> {
     }
 }
 
-/// Starts the service as an independent process, so it keeps running when
-/// the window or tuxhub is closed.
+/// Starts the service as an independent process, so it outlives whichever of
+/// the window and tuxhub is closed first.
 pub fn start_service() -> io::Result<()> {
-    let exe = std::env::current_exe()?;
+    start_service_at(&std::env::current_exe()?)
+}
+
+/// Like `start_service`, for the binary at `exe`.
+pub fn start_service_at(exe: &Path) -> io::Result<()> {
     let mut cmd = Command::new(exe);
     cmd.arg("daemon")
         .stdin(Stdio::null())
@@ -87,7 +92,7 @@ pub fn request_on(stream: &UnixStream, method: &str, params: Value) -> io::Resul
     Err(io::Error::other("the service closed the connection"))
 }
 
-/// Asks a running service to unmute and exit. Does nothing if none runs.
+/// Asks a running service to stop and exit. Does nothing if none runs.
 pub fn stop_service() {
     if let Ok(s) = connect() {
         let _ = request_on(&s, "quit", Value::Null);

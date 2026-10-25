@@ -12,6 +12,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
+/// Name shown in window titles and messages.
+pub const DISPLAY_NAME: &str = "Push-to-Mute";
 pub const APP_ID: &str = "io.github.sirsnolte.TuxhubPushToMute";
 pub const TOOL_ID: &str = "push-to-mute";
 pub const EXE_NAME: &str = "tuxhub-push-to-mute";
@@ -226,18 +228,7 @@ pub fn install(force: bool) -> io::Result<PathBuf> {
     }
 
     refresh_at(&dest, &Config::load())?;
-    let mut cmd = Command::new(dest.join(EXE_NAME));
-    cmd.arg("daemon")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    unsafe {
-        std::os::unix::process::CommandExt::pre_exec(&mut cmd, || {
-            libc::setsid();
-            Ok(())
-        });
-    }
-    cmd.spawn()?;
+    crate::client::start_service_at(&dest.join(EXE_NAME))?;
     Ok(dest)
 }
 

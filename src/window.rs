@@ -2,7 +2,7 @@
 //! tuxhub shows, and connects it to the background service.
 
 use crate::client;
-use crate::integration::{APP_ID, tool_root};
+use crate::integration::{APP_ID, DISPLAY_NAME, tool_root};
 use serde_json::{Value, json};
 use std::borrow::Cow;
 use std::ffi::{CString, c_char};
@@ -47,7 +47,7 @@ pub fn run() -> io::Result<()> {
 
     let dark = desktop_prefers_dark();
     let window = WindowBuilder::new()
-        .with_title("Push-to-Mute")
+        .with_title(DISPLAY_NAME)
         .with_inner_size(LogicalSize::new(880.0, 760.0))
         .with_min_inner_size(LogicalSize::new(480.0, 420.0))
         .with_theme(dark.map(|d| if d { Theme::Dark } else { Theme::Light }))
@@ -198,7 +198,7 @@ fn ipc(socket: &Socket, proxy: &EventLoopProxy<UserEvent>, body: &str) {
         .as_ref()
         .map(|mut s| writeln!(s, "{request}"));
     if !matches!(sent, Some(Ok(()))) {
-        reply(Err("the Push-to-Mute service is not available".into()));
+        reply(Err(format!("the {DISPLAY_NAME} service is not available")));
     }
 }
 
@@ -277,5 +277,39 @@ fn desktop_prefers_dark() -> Option<bool> {
         '1' => Some(true),
         '2' => Some(false),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn get(ui: &Path, path: &str) -> Response<Cow<'static, [u8]>> {
+        let req = Request::builder()
+            .uri(format!("{SCHEME}://localhost{path}"))
+            .body(Vec::new())
+            .unwrap();
+        serve(ui, &req)
+    }
+
+    #[test]
+    fn serves_the_interface_and_the_bridge_only() {
+        let ui = Path::new(env!("CARGO_MANIFEST_DIR")).join("ui");
+        let page = get(&ui, "/index.html");
+        assert_eq!(page.status(), StatusCode::OK);
+        let csp = page.headers()[header::CONTENT_SECURITY_POLICY]
+            .to_str()
+            .unwrap();
+        assert!(csp.contains("connect-src 'self' data:"));
+        assert_eq!(get(&ui, "/").status(), StatusCode::OK);
+        assert_eq!(get(&ui, "/__tuxhub/bridge.js").status(), StatusCode::OK);
+        assert_eq!(get(&ui, "/vendor/webawesome.js").status(), StatusCode::OK);
+        for outside in ["/../Cargo.toml", "/%2e%2e/Cargo.toml", "/missing.js"] {
+            assert_eq!(
+                get(&ui, outside).status(),
+                StatusCode::NOT_FOUND,
+                "{outside}"
+            );
+        }
     }
 }
