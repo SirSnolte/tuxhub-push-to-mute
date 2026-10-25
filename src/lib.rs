@@ -10,4 +10,5 @@ pub mod integration;
 pub mod kwin;
 pub mod live;
 pub mod paths;
+pub mod service;
 pub mod window;
