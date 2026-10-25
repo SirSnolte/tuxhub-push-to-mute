@@ -6,7 +6,7 @@ All notable changes are documented in this file. The format follows
 
 ## [0.4.0] - unreleased
 
-Requires tuxhub 0.6.0 or newer.
+Requires tuxhub 0.7.0 or newer.
 
 ### Changed
 

@@ -2,7 +2,7 @@
 #
 # The settings live in the tool's own background service, so tuxhub, the
 # tool's window and the command line always show the same state. tuxhub
-# talks to it over the live interface (requires tuxhub 0.6.0 or newer) and
+# talks to it over the live interface (requires tuxhub 0.7.0 or newer) and
 # starts it when needed. The interface in ui/ is localized and runs both in
 # tuxhub and in the window.
 
