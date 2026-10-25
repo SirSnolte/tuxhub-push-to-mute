@@ -196,6 +196,17 @@ wa-input.setting[type="number"]::part(base) {
   display: none !important;
 }
 
+/* Page layout shared by tuxhub and all tools: the margin around a page, the
+   gap between cards and the padding inside a card are the same everywhere. */
+:root {
+  --tuxhub-page-margin: var(--wa-space-l);
+  --tuxhub-card-gap: var(--wa-space-m);
+  --tuxhub-card-padding: var(--wa-space-l);
+}
+wa-card {
+  --spacing: var(--tuxhub-card-padding);
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --wa-transition-fast: 0s;

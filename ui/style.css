@@ -20,12 +20,15 @@ body {
 
 main {
   max-width: 760px;
-  /* Inside tuxhub the page sits in the tool area, which has its own margins. */
+  /* Inside tuxhub the page sits in the tool area, which has the margin. The
+     small padding leaves room for the card shadows; tuxhub pulls the frame out
+     by the same amount. */
   padding: var(--wa-space-2xs);
+  gap: var(--tuxhub-card-gap);
 }
 :root[data-standalone] main {
   margin-inline: auto;
-  padding: var(--wa-space-xl) var(--wa-space-l);
+  padding: var(--tuxhub-page-margin);
 }
 
 .error {
