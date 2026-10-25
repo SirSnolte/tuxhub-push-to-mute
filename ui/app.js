@@ -29,6 +29,9 @@ const STRINGS = {
     "problem.setup": "Set up access",
     "problem.devices": "No connected device has the selected keys.",
     "problem.setupFailed": "Setup failed: {error}",
+    "tab.main": "Push-to-Mute",
+    "tab.only": "Conditions",
+    "tab.options": "Options",
     "keys.title": "Push-to-talk keys",
     "keys.add": "Add key",
     "keys.help":
@@ -108,6 +111,9 @@ const STRINGS = {
     "problem.setup": "Zugriff einrichten",
     "problem.devices": "Kein angeschlossenes Gerät hat die gewählten Tasten.",
     "problem.setupFailed": "Einrichtung fehlgeschlagen: {error}",
+    "tab.main": "Push-to-Mute",
+    "tab.only": "Bedingungen",
+    "tab.options": "Optionen",
     "keys.title": "Push-to-Talk-Tasten",
     "keys.add": "Taste hinzufügen",
     "keys.help":

@@ -8,7 +8,7 @@ set -euo pipefail
 
 WA_VERSION=3.14.0
 ESBUILD_VERSION=0.28.2
-COMPONENTS=(button callout card divider icon input option select switch tag)
+COMPONENTS=(button callout card divider icon input option select switch tab tab-group tab-panel tag)
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 out="$root/ui/vendor"

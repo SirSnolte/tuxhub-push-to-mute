@@ -41,6 +41,10 @@ main {
   font-size: var(--wa-font-size-xs);
 }
 
+wa-tab-panel::part(base) {
+  padding: var(--wa-space-l) 0 0;
+}
+
 /* Status */
 .hero {
   transition:

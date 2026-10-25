@@ -12,19 +12,6 @@
   </head>
   <body>
     <main class="wa-stack">
-      <wa-card class="hero" id="hero">
-        <div class="wa-split">
-          <div class="hero-main wa-cluster wa-gap-m wa-align-items-center">
-            <span class="dot" id="dot" aria-hidden="true"></span>
-            <div class="wa-stack wa-gap-3xs">
-              <h1 id="state-title"></h1>
-              <p class="muted" id="state-detail"></p>
-            </div>
-          </div>
-          <wa-switch id="enabled" data-i18n="enabled" data-i18n-title="enabled.help"></wa-switch>
-        </div>
-      </wa-card>
-
       <wa-callout variant="warning" class="hidden" id="problem">
         <div class="wa-split">
           <span id="problem-text"></span>
@@ -32,99 +19,131 @@
         </div>
       </wa-callout>
 
-      <wa-card>
-        <div class="wa-stack wa-gap-s">
-          <div class="wa-split">
-            <h2 data-i18n="keys.title"></h2>
-            <wa-button variant="brand" id="learn" data-i18n="keys.add"></wa-button>
-          </div>
-          <p class="muted" data-i18n="keys.help"></p>
-          <div class="wa-cluster wa-gap-xs" id="keys"></div>
-          <wa-callout variant="brand" class="hidden" id="capture" aria-live="assertive">
-            <div class="wa-split">
-              <span data-i18n="keys.capture"></span>
-              <wa-button size="s" id="learn-cancel" data-i18n="keys.cancel"></wa-button>
-            </div>
-          </wa-callout>
-        </div>
-      </wa-card>
-
-      <wa-card>
-        <div class="wa-stack wa-gap-s">
-          <h2 data-i18n="only.title"></h2>
-          <p class="muted" data-i18n="only.help"></p>
-          <div class="list" id="conditions"></div>
-          <p class="empty muted hidden" id="conditions-empty" data-i18n="only.none"></p>
-          <form class="wa-cluster wa-gap-xs" id="condition-form">
-            <wa-input
-              id="condition-input"
-              maxlength="64"
-              autocomplete="off"
-              spellcheck="false"
-              data-i18n-placeholder="only.placeholder"
-              data-i18n-aria-label="only.placeholder"
-            ></wa-input>
-            <wa-button type="submit" appearance="outlined" data-i18n="only.add"></wa-button>
-          </form>
-
-          <wa-divider></wa-divider>
-
-          <h3 data-i18n="windows.title"></h3>
-          <p class="muted" id="windows-help" data-i18n="windows.help"></p>
-          <div class="list" id="windows"></div>
-          <p class="empty muted hidden" id="windows-empty" data-i18n="windows.none"></p>
-          <wa-callout variant="neutral" class="hidden" id="windows-unavailable">
-            <span data-i18n="windows.unavailable"></span>
-          </wa-callout>
-        </div>
-      </wa-card>
-
-      <wa-card>
-        <div class="wa-stack wa-gap-s">
-          <h2 data-i18n="apps.title"></h2>
-          <p class="muted" data-i18n="apps.help"></p>
-          <div class="streams" id="streams"></div>
-          <p class="empty muted hidden" id="streams-empty" data-i18n="apps.none"></p>
-
-          <wa-divider></wa-divider>
-
-          <h3 data-i18n="rules.title"></h3>
-          <p class="muted" data-i18n="rules.help"></p>
-          <div class="wa-cluster wa-gap-xs" id="rules"></div>
-          <form class="wa-cluster wa-gap-xs" id="rule-form">
-            <wa-input
-              id="rule-input"
-              maxlength="64"
-              autocomplete="off"
-              spellcheck="false"
-              data-i18n-placeholder="rules.placeholder"
-              data-i18n-aria-label="rules.placeholder"
-            ></wa-input>
-            <wa-button type="submit" appearance="outlined" data-i18n="rules.add"></wa-button>
-          </form>
-        </div>
-      </wa-card>
-
-      <wa-card>
-        <h2 data-i18n="options.title"></h2>
-        <wa-select class="setting" id="mode">
-          <span slot="label" data-i18n="mode.label"></span>
-          <span slot="hint" id="mode-help"></span>
-          <wa-option value="hold" data-i18n="mode.hold"></wa-option>
-          <wa-option value="toggle" data-i18n="mode.toggle"></wa-option>
-        </wa-select>
-        <wa-input class="setting" type="number" without-spin-buttons id="delay" min="0" max="2000" step="10">
-          <span slot="label" data-i18n="delay.label"></span>
-          <span slot="hint" data-i18n="delay.help"></span>
-          <span slot="end" class="muted">ms</span>
-        </wa-input>
-        <wa-switch class="setting" id="login">
-          <span data-i18n="login.label"></span>
-          <span slot="hint" data-i18n="login.help"></span>
-        </wa-switch>
-      </wa-card>
-
       <p class="error" id="error" role="alert"></p>
+
+      <wa-tab-group id="tabs">
+        <wa-tab slot="nav" panel="main" data-i18n="tab.main"></wa-tab>
+        <wa-tab slot="nav" panel="only" data-i18n="tab.only"></wa-tab>
+        <wa-tab slot="nav" panel="options" data-i18n="tab.options"></wa-tab>
+
+        <wa-tab-panel name="main">
+          <div class="wa-stack">
+            <wa-card class="hero" id="hero">
+              <div class="wa-split">
+                <div class="hero-main wa-cluster wa-gap-m wa-align-items-center">
+                  <span class="dot" id="dot" aria-hidden="true"></span>
+                  <div class="wa-stack wa-gap-3xs">
+                    <h1 id="state-title"></h1>
+                    <p class="muted" id="state-detail"></p>
+                  </div>
+                </div>
+                <wa-switch id="enabled" data-i18n="enabled" data-i18n-title="enabled.help"></wa-switch>
+              </div>
+            </wa-card>
+
+            <wa-card>
+              <div class="wa-stack wa-gap-s">
+                <div class="wa-split">
+                  <h2 data-i18n="keys.title"></h2>
+                  <wa-button variant="brand" id="learn" data-i18n="keys.add"></wa-button>
+                </div>
+                <p class="muted" data-i18n="keys.help"></p>
+                <div class="wa-cluster wa-gap-xs" id="keys"></div>
+                <wa-callout variant="brand" class="hidden" id="capture" aria-live="assertive">
+                  <div class="wa-split">
+                    <span data-i18n="keys.capture"></span>
+                    <wa-button size="s" id="learn-cancel" data-i18n="keys.cancel"></wa-button>
+                  </div>
+                </wa-callout>
+              </div>
+            </wa-card>
+
+            <wa-card>
+              <div class="wa-stack wa-gap-s">
+                <h2 data-i18n="apps.title"></h2>
+                <p class="muted" data-i18n="apps.help"></p>
+                <div class="streams" id="streams"></div>
+                <p class="empty muted hidden" id="streams-empty" data-i18n="apps.none"></p>
+
+                <wa-divider></wa-divider>
+
+                <h3 data-i18n="rules.title"></h3>
+                <p class="muted" data-i18n="rules.help"></p>
+                <div class="wa-cluster wa-gap-xs" id="rules"></div>
+                <form class="wa-cluster wa-gap-xs" id="rule-form">
+                  <wa-input
+                    id="rule-input"
+                    maxlength="64"
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-i18n-placeholder="rules.placeholder"
+                    data-i18n-aria-label="rules.placeholder"
+                  ></wa-input>
+                  <wa-button type="submit" appearance="outlined" data-i18n="rules.add"></wa-button>
+                </form>
+              </div>
+            </wa-card>
+          </div>
+        </wa-tab-panel>
+
+        <wa-tab-panel name="only">
+          <div class="wa-stack">
+            <wa-card>
+              <div class="wa-stack wa-gap-s">
+                <h2 data-i18n="only.title"></h2>
+                <p class="muted" data-i18n="only.help"></p>
+                <div class="list" id="conditions"></div>
+                <p class="empty muted hidden" id="conditions-empty" data-i18n="only.none"></p>
+                <form class="wa-cluster wa-gap-xs" id="condition-form">
+                  <wa-input
+                    id="condition-input"
+                    maxlength="64"
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-i18n-placeholder="only.placeholder"
+                    data-i18n-aria-label="only.placeholder"
+                  ></wa-input>
+                  <wa-button type="submit" appearance="outlined" data-i18n="only.add"></wa-button>
+                </form>
+
+                <wa-divider></wa-divider>
+
+                <h3 data-i18n="windows.title"></h3>
+                <p class="muted" id="windows-help" data-i18n="windows.help"></p>
+                <div class="list" id="windows"></div>
+                <p class="empty muted hidden" id="windows-empty" data-i18n="windows.none"></p>
+                <wa-callout variant="neutral" class="hidden" id="windows-unavailable">
+                  <span data-i18n="windows.unavailable"></span>
+                </wa-callout>
+              </div>
+            </wa-card>
+          </div>
+        </wa-tab-panel>
+
+        <wa-tab-panel name="options">
+          <div class="wa-stack">
+            <wa-card>
+              <h2 data-i18n="options.title"></h2>
+              <wa-select class="setting" id="mode">
+                <span slot="label" data-i18n="mode.label"></span>
+                <span slot="hint" id="mode-help"></span>
+                <wa-option value="hold" data-i18n="mode.hold"></wa-option>
+                <wa-option value="toggle" data-i18n="mode.toggle"></wa-option>
+              </wa-select>
+              <wa-input class="setting" type="number" without-spin-buttons id="delay" min="0" max="2000" step="10">
+                <span slot="label" data-i18n="delay.label"></span>
+                <span slot="hint" data-i18n="delay.help"></span>
+                <span slot="end" class="muted">ms</span>
+              </wa-input>
+              <wa-switch class="setting" id="login">
+                <span data-i18n="login.label"></span>
+                <span slot="hint" data-i18n="login.help"></span>
+              </wa-switch>
+            </wa-card>
+          </div>
+        </wa-tab-panel>
+      </wa-tab-group>
+
       <p class="muted footer" id="footer"></p>
     </main>
     <script src="app.js"></script>
