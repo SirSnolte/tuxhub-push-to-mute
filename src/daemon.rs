@@ -2,19 +2,21 @@
 //! keys and mutes the selected applications.
 //!
 //! Exactly one service runs per user. The window, tuxhub and the command line
-//! talk to it over a Unix socket with the same line-based JSON-RPC protocol
-//! that tuxhub uses, so all of them always show the same state.
+//! talk to it over the Unix socket of the tuxhub live interface
+//! (`$XDG_RUNTIME_DIR/tuxhub/push-to-mute.sock`, one JSON object per line), so
+//! all of them always show the same state.
 
 use crate::audio::{self, Stream};
 use crate::conditions::{self, ProcNames, Snapshot};
 use crate::config::{self, Config, Mode};
 use crate::input::{self, Listener};
+use crate::live::{self, Failure};
 use crate::{integration, kwin, paths};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::os::fd::AsRawFd;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{FileTypeExt, PermissionsExt};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -22,14 +24,59 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-const SOCKET_NAME: &str = "tuxhub-push-to-mute.sock";
 const LOCK_NAME: &str = "tuxhub-push-to-mute.lock";
+/// Longest line a client may send, without the line break.
+const MAX_LINE: usize = 1 << 20;
 const LEARN_TIMEOUT: Duration = Duration::from_secs(15);
 const EXE_CHECK_INTERVAL: Duration = Duration::from_secs(2);
 const SCAN_INTERVAL: Duration = Duration::from_secs(2);
 
 pub fn socket_path() -> io::Result<PathBuf> {
-    Ok(paths::runtime_dir()?.join(SOCKET_NAME))
+    Ok(paths::runtime_dir()?
+        .join("tuxhub")
+        .join(format!("{}.sock", live::TOOL_ID)))
+}
+
+/// Listens on `path`: creates its folder with mode 0700, replaces a socket
+/// that nobody listens on, and never removes anything else.
+fn bind(path: &std::path::Path) -> io::Result<UnixListener> {
+    let dir = path
+        .parent()
+        .ok_or_else(|| io::Error::other("invalid socket path"))?;
+    match std::fs::symlink_metadata(dir) {
+        Ok(m) if m.is_dir() => {}
+        Ok(_) => {
+            return Err(io::Error::other(format!(
+                "{} is not a folder",
+                dir.display()
+            )));
+        }
+        Err(_) => {
+            std::fs::create_dir_all(dir)?;
+            std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))?;
+        }
+    }
+    match std::fs::symlink_metadata(path) {
+        Ok(m) if m.file_type().is_socket() => {
+            if UnixStream::connect(path).is_ok() {
+                return Err(io::Error::new(
+                    io::ErrorKind::AddrInUse,
+                    format!("{} is in use", path.display()),
+                ));
+            }
+            std::fs::remove_file(path)?;
+        }
+        Ok(_) => {
+            return Err(io::Error::other(format!(
+                "{} exists and is not a socket; remove it to start the service",
+                path.display()
+            )));
+        }
+        Err(_) => {}
+    }
+    let server = UnixListener::bind(path)?;
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))?;
+    Ok(server)
 }
 
 enum Msg {
@@ -38,9 +85,11 @@ enum Msg {
     /// Windows reported by KWin, `None` once KWin is gone.
     Windows(Option<Snapshot>),
     Request {
+        /// Connection the request came from.
+        client: u64,
         method: String,
         params: Value,
-        reply: Sender<Result<Value, String>>,
+        reply: Sender<Result<Value, Failure>>,
     },
     Terminate,
 }
@@ -54,9 +103,7 @@ pub fn run() -> io::Result<bool> {
         return Ok(false);
     };
     let socket = socket_path()?;
-    let _ = std::fs::remove_file(&socket);
-    let server = UnixListener::bind(&socket)?;
-    std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600))?;
+    let server = bind(&socket)?;
 
     let (tx, rx) = std::sync::mpsc::channel();
     {
@@ -148,11 +195,15 @@ impl Clients {
     }
 
     fn notify(&self, method: &str, params: Value) {
+        self.notify_except(None, method, params);
+    }
+
+    /// Notifies every connection but `except`.
+    fn notify_except(&self, except: Option<u64>, method: &str, params: Value) {
         let line = format!("{}\n", json!({ "method": method, "params": params }));
-        self.0
-            .lock()
-            .unwrap()
-            .retain(|(_, w)| w.lock().unwrap().write_all(line.as_bytes()).is_ok());
+        self.0.lock().unwrap().retain(|(id, w)| {
+            Some(*id) == except || w.lock().unwrap().write_all(line.as_bytes()).is_ok()
+        });
     }
 }
 
@@ -175,17 +226,37 @@ fn accept(server: UnixListener, clients: Clients, tx: Sender<Msg>) {
         let _ = std::thread::Builder::new()
             .name(format!("client-{id}"))
             .spawn(move || {
-                serve_client(read, &writer, &tx);
+                serve_client(id, read, &writer, &tx);
                 clients.remove(id);
+                // Wakes up a client that is still blocked on its socket.
+                let _ = writer.lock().unwrap().shutdown(std::net::Shutdown::Both);
             });
     }
 }
 
-fn serve_client(read: UnixStream, writer: &Writer, tx: &Sender<Msg>) {
-    for line in BufReader::new(read).lines() {
-        let Ok(line) = line else { break };
-        let Ok(msg) = serde_json::from_str::<Value>(&line) else {
-            continue;
+/// Reads one line of at most [`MAX_LINE`] bytes; `None` at the end, on an
+/// error or for a longer line.
+fn read_line(reader: &mut impl BufRead, buf: &mut Vec<u8>) -> Option<()> {
+    buf.clear();
+    let n = reader
+        .take(MAX_LINE as u64 + 1)
+        .read_until(b'\n', buf)
+        .ok()?;
+    if n == 0 || buf.last() != Some(&b'\n') {
+        return None;
+    }
+    buf.pop();
+    Some(())
+}
+
+/// Answers the requests of one connection. A line that is too long or not a
+/// JSON object closes it.
+fn serve_client(client: u64, read: UnixStream, writer: &Writer, tx: &Sender<Msg>) {
+    let mut reader = BufReader::new(read);
+    let mut buf = Vec::new();
+    while read_line(&mut reader, &mut buf).is_some() {
+        let Ok(msg @ Value::Object(_)) = serde_json::from_slice::<Value>(&buf) else {
+            break;
         };
         let id = msg.get("id").cloned();
         let method = msg
@@ -197,6 +268,7 @@ fn serve_client(read: UnixStream, writer: &Writer, tx: &Sender<Msg>) {
         let (rtx, rrx) = std::sync::mpsc::channel();
         if tx
             .send(Msg::Request {
+                client,
                 method,
                 params,
                 reply: rtx,
@@ -211,7 +283,11 @@ fn serve_client(read: UnixStream, writer: &Writer, tx: &Sender<Msg>) {
         if let Some(id) = id {
             let reply = match result {
                 Ok(r) => json!({ "id": id, "result": r }),
-                Err(e) => json!({ "id": id, "error": { "message": e } }),
+                Err(Failure {
+                    message,
+                    field: Some(field),
+                }) => json!({ "id": id, "error": { "message": message, "field": field } }),
+                Err(e) => json!({ "id": id, "error": { "message": e.message } }),
             };
             if writeln!(writer.lock().unwrap(), "{reply}").is_err() {
                 break;
@@ -311,6 +387,7 @@ impl Service {
             match rx.recv_timeout(next.saturating_duration_since(now)) {
                 Ok(Msg::Terminate) | Err(RecvTimeoutError::Disconnected) => return false,
                 Ok(Msg::Request {
+                    client,
                     method,
                     params,
                     reply,
@@ -319,7 +396,7 @@ impl Service {
                         let _ = reply.send(Ok(json!(true)));
                         return false;
                     }
-                    let _ = reply.send(self.request(&method, params));
+                    let _ = reply.send(self.request(client, &method, params));
                 }
                 Ok(Msg::Input(e)) => self.input(e),
                 Ok(Msg::Audio(e)) => self.audio(e),
@@ -612,17 +689,28 @@ impl Service {
     }
 
     fn set_config(&mut self, cfg: Config) -> Result<(), String> {
+        self.set_config_from(cfg, None)
+    }
+
+    /// Saves and applies `cfg`. `origin` is the connection that set a value
+    /// over the live interface; it gets no `changed` for it.
+    fn set_config_from(&mut self, cfg: Config, origin: Option<u64>) -> Result<(), String> {
         if cfg == self.cfg {
             return Ok(());
         }
         cfg.save()
             .map_err(|e| format!("could not save the settings: {e}"))?;
-        self.apply_config(cfg);
+        self.apply_config(cfg, origin);
         Ok(())
     }
 
-    fn apply_config(&mut self, cfg: Config) {
+    fn apply_config(&mut self, cfg: Config, origin: Option<u64>) {
         let old = std::mem::replace(&mut self.cfg, cfg);
+        let values = live::values(&self.cfg);
+        if live::values(&old) != values {
+            self.clients
+                .notify_except(origin, "changed", json!({ "values": values }));
+        }
         if old.keys != self.cfg.keys {
             self.listener.set_keys(self.cfg.key_codes());
         }
@@ -643,10 +731,18 @@ impl Service {
         self.clients.notify("streams", self.stream_list());
     }
 
-    fn request(&mut self, method: &str, params: Value) -> Result<Value, String> {
+    fn request(&mut self, client: u64, method: &str, params: Value) -> Result<Value, Failure> {
         match method {
-            // Settings stored by tuxhub; this tool keeps its own configuration.
-            "configure" => Ok(json!(true)),
+            "hello" => live::hello(&params),
+            "schema" => Ok(live::schema(
+                params.get("locale").and_then(Value::as_str).unwrap_or("en"),
+            )),
+            "get" => Ok(json!({ "values": live::values(&self.cfg) })),
+            "set" => {
+                let (cfg, value) = live::set(&self.cfg, &params)?;
+                self.set_config_from(cfg, Some(client))?;
+                Ok(json!({ "value": value }))
+            }
             "status" => Ok(self.status()),
             "config.get" => Ok(json!(self.cfg)),
             "config.set" => {
@@ -688,13 +784,13 @@ impl Service {
                     "toggle" => !self.cfg.enabled,
                     "enable" => true,
                     "disable" => false,
-                    other => return Err(format!("unknown action {other:?}")),
+                    other => return Err(format!("unknown action {other:?}").into()),
                 };
                 let cfg = self.cfg.merged(json!({ "enabled": enabled }))?;
                 self.set_config(cfg)?;
                 Ok(json!(self.cfg.enabled))
             }
-            other => Err(format!("unknown method {other:?}")),
+            other => Err(format!("unknown method {other:?}").into()),
         }
     }
 }
@@ -878,7 +974,7 @@ mod tests {
             enabled: false,
             ..s.cfg.clone()
         };
-        s.apply_config(cfg);
+        s.apply_config(cfg, None);
         assert_eq!(state(&s), "paused");
         start_game(&proc);
         s.input(input::Event::Pressed);
@@ -898,7 +994,7 @@ mod tests {
 
         let mut cfg = s.cfg.clone();
         cfg.only_when = conditions(&[("fakegame", When::Running)]);
-        s.apply_config(cfg);
+        s.apply_config(cfg, None);
         assert!(!s.procs.is_empty());
         assert!(s.scan_at.is_some());
         assert_eq!(s.met, ["fakegame"]);
@@ -910,7 +1006,7 @@ mod tests {
 
         let mut cfg = s.cfg.clone();
         cfg.only_when.clear();
-        s.apply_config(cfg);
+        s.apply_config(cfg, None);
         assert!(s.procs.is_empty());
         assert_eq!(s.scan_at, None);
         assert!(s.allowed());
@@ -924,7 +1020,7 @@ mod tests {
         assert!(s.muted);
         let mut cfg = s.cfg.clone();
         cfg.only_when = conditions(&[("fakegame", When::Running)]);
-        s.apply_config(cfg);
+        s.apply_config(cfg, None);
         assert!(!s.muted);
         assert_eq!(state(&s), "waiting");
     }
@@ -963,7 +1059,7 @@ mod tests {
         assert_eq!(s.met, ["fakegame"]);
         let mut cfg = s.cfg.clone();
         cfg.only_when = conditions(&[("fakegame", When::Focused)]);
-        s.apply_config(cfg);
+        s.apply_config(cfg, None);
         assert!(s.met.is_empty());
         s.input(input::Event::Pressed);
         assert!(!s.muted);

@@ -44,8 +44,9 @@ tuxhub, whichever is installed first.
 
 ### With tuxhub
 
-Install Push-to-Mute from the workshop in tuxhub. tuxhub takes care of
-updates and shows the interface on its own page.
+Install Push-to-Mute from the workshop in tuxhub (version 0.6.0 or newer).
+tuxhub takes care of updates, starts the background service when needed and
+shows the interface on its own page.
 
 ### Without tuxhub
 

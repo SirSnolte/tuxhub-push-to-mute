@@ -4,6 +4,28 @@ All notable changes are documented in this file. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - unreleased
+
+Requires tuxhub 0.6.0 or newer.
+
+### Changed
+
+- tuxhub talks to the service over its live interface, the socket
+  `$XDG_RUNTIME_DIR/tuxhub/push-to-mute.sock`, and starts the service when
+  needed. The window and the command line use the same socket.
+- The service offers its basic settings (enabled, mode, release delay, start
+  at login) and the action `toggle` to every live client; changes reach all
+  of them at once. Keys, applications and conditions stay in the tool's own
+  interface.
+- A file that is not a socket in place of the socket is never removed; the
+  service refuses to start instead. A line over 1 MiB, or one that is not a
+  JSON object, closes only that connection.
+
+### Removed
+
+- tuxhub mode (`--tuxhub`) and the `configure` request, used by tuxhub 0.5
+  and older.
+
 ## [0.3.1] - 2026-10-24
 
 ### Fixed

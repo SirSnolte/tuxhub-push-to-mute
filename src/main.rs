@@ -3,16 +3,13 @@ use serde_json::{Value, json};
 use std::io::{self, BufRead, BufReader, Write};
 use std::time::Duration;
 use tuxhub_push_to_mute::config::{Mode, parse_conditions, parse_key};
-use tuxhub_push_to_mute::{client, daemon, integration, proxy, window};
+use tuxhub_push_to_mute::{client, daemon, integration, window};
 
 /// Mutes voice chat applications such as Discord, TeamSpeak or Mumble while
 /// an in-game push-to-talk key is held. Without a command, the window opens.
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
-    /// tuxhub mode: JSON-RPC over standard input and output (used by tuxhub)
-    #[arg(long, hide = true)]
-    tuxhub: bool,
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -69,13 +66,9 @@ enum Command {
 
 fn main() {
     let cli = Cli::parse();
-    let result = if cli.tuxhub {
-        proxy::serve()
-    } else {
-        match cli.command {
-            None => window::run(),
-            Some(cmd) => run(cmd),
-        }
+    let result = match cli.command {
+        None => window::run(),
+        Some(cmd) => run(cmd),
     };
     if let Err(e) = result {
         eprintln!("Error: {e}");

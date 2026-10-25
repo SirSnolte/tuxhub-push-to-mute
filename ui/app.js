@@ -540,6 +540,14 @@ function applyTheme(dark) {
   document.documentElement.classList.toggle("wa-light", !dark);
 }
 
+// The live connection of tuxhub ended (service quit or restarted after an
+// update): show the state and connect again, which starts the service.
+tuxhub.on("closed", () => {
+  status = { state: "offline" };
+  config = null;
+  renderStatus();
+  setTimeout(load, 1000);
+});
 tuxhub.on("theme", ({ dark }) => applyTheme(dark));
 tuxhub.on("locale", ({ locale: l }) => {
   locale = l === "de" ? "de" : "en";

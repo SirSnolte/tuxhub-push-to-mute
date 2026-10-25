@@ -8,6 +8,6 @@ pub mod daemon;
 pub mod input;
 pub mod integration;
 pub mod kwin;
+pub mod live;
 pub mod paths;
-pub mod proxy;
 pub mod window;
