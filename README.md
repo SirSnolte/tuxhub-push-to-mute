@@ -139,7 +139,7 @@ Ubuntu).
 
 ```bash
 cargo build --release
-cargo test
+cargo test -- --test-threads=1
 ```
 
 ## License
