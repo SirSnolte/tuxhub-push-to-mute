@@ -26,7 +26,13 @@ const SCHEME: &str = "tuxhub";
 enum UserEvent {
     /// A JSON message for the page.
     Deliver(String),
+    /// The page has loaded: the window may appear.
+    Show,
 }
+
+/// How long the window stays hidden at most when the page does not finish
+/// loading, so it never stays invisible.
+const SHOW_FALLBACK: Duration = Duration::from_secs(3);
 
 type Socket = Arc<Mutex<Option<UnixStream>>>;
 
@@ -51,12 +57,22 @@ pub fn run() -> io::Result<()> {
         .with_inner_size(LogicalSize::new(880.0, 760.0))
         .with_min_inner_size(LogicalSize::new(480.0, 420.0))
         .with_theme(dark.map(|d| if d { Theme::Dark } else { Theme::Light }))
+        // Hidden until the page has loaded, so it never flashes white.
+        .with_visible(false)
         .build(&event_loop)
         .map_err(io::Error::other)?;
 
     let initial = json!({ "dark": dark, "locale": desktop_locale() });
     let ipc_socket = socket.clone();
     let ipc_proxy = proxy.clone();
+    let load_proxy = proxy.clone();
+    {
+        let proxy = proxy.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(SHOW_FALLBACK);
+            let _ = proxy.send_event(UserEvent::Show);
+        });
+    }
     let vbox = window
         .default_vbox()
         .ok_or_else(|| io::Error::other("no window container"))?;
@@ -64,6 +80,11 @@ pub fn run() -> io::Result<()> {
         .with_initialization_script(format!("window.__tuxhubInitial = {initial};"))
         .with_custom_protocol(SCHEME.into(), move |_, req| serve(&ui, &req))
         .with_url(format!("{SCHEME}://localhost/index.html"))
+        .with_on_page_load_handler(move |event, _| {
+            if matches!(event, wry::PageLoadEvent::Finished) {
+                let _ = load_proxy.send_event(UserEvent::Show);
+            }
+        })
         .with_ipc_handler(move |req: Request<String>| ipc(&ipc_socket, &ipc_proxy, req.body()))
         .with_navigation_handler(|url| url.starts_with(&format!("{SCHEME}://")))
         .with_new_window_req_handler(|url, _| {
@@ -82,6 +103,12 @@ pub fn run() -> io::Result<()> {
         match event {
             Event::UserEvent(UserEvent::Deliver(json)) => {
                 let _ = webview.evaluate_script(&format!("window.__tuxhubReceive({json})"));
+            }
+            Event::UserEvent(UserEvent::Show) => {
+                if !window.is_visible() {
+                    window.set_visible(true);
+                    window.set_focus();
+                }
             }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
